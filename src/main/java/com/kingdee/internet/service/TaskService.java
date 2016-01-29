@@ -3,6 +3,7 @@ package com.kingdee.internet.service;
 import com.kingdee.internet.entity.Task;
 import com.kingdee.internet.repository.TaskDao;
 import com.kingdee.internet.util.CommonUtils;
+import com.kingdee.internet.util.ConfigUtils;
 import com.kingdee.internet.util.RedisManager;
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
@@ -25,11 +26,8 @@ public class TaskService {
     @Autowired
     private TaskDao taskDao;
 
-    @Value("${task.queue.expire.minutes}")
-    private long queueExpireMinutes;
-
-    @Value("${task.expire.minutes}")
-    private int taskExpireMinutes;
+    @Autowired
+    private ConfigUtils configUtils;
 
     @Autowired
     private RedisManager redisManager;
@@ -47,7 +45,8 @@ public class TaskService {
 
     private boolean taskExpired(Task task) {
         if(task == null) return true;
-        return DateUtils.addMinutes(task.getRequestDate(), taskExpireMinutes).getTime() < System.currentTimeMillis();
+        return DateUtils.addMinutes(task.getRequestDate(),
+                configUtils.taskExpireMinutes()).getTime() < System.currentTimeMillis();
     }
 
     @Transactional(readOnly = false)
@@ -56,9 +55,10 @@ public class TaskService {
         task.setTaskId(uuid);
         task.setRequestDate(new Date());
         taskDao.save(task);
-        redisManager.leftPush(task.getBankType() + REDIS_QUEUE_SUFFIX, task, queueExpireMinutes, TimeUnit.MINUTES);
+        redisManager.leftPush(task.getBankType() + REDIS_QUEUE_SUFFIX, task,
+                configUtils.queueExpireMinutes(), TimeUnit.MINUTES);
         logger.info("lpush task with id: {} {}, and set the queue expire in {} minutes.",
-                uuid, task.getBankType(), queueExpireMinutes);
+                uuid, task.getBankType(), configUtils.queueExpireMinutes());
         return task;
     }
 }
