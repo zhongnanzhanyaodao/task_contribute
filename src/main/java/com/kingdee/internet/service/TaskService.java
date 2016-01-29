@@ -9,7 +9,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,15 +37,13 @@ public class TaskService {
             task = redisManager.rightPop(bankType + REDIS_QUEUE_SUFFIX, Task.class);
             logger.info("rpop {}, and {} retrieved.", bankType,
                     task != null ? task.getTaskId() : "nothing");
-            if(task == null) return task;
+            if(task == null) return null;
         } while (taskExpired(task));
         return task;
     }
 
     private boolean taskExpired(Task task) {
-        if(task == null) return true;
-        return DateUtils.addMinutes(task.getRequestDate(),
-                configUtils.taskExpireMinutes()).getTime() < System.currentTimeMillis();
+        return task == null || DateUtils.addMinutes(task.getRequestDate(), configUtils.taskExpireMinutes()).getTime() < System.currentTimeMillis();
     }
 
     @Transactional(readOnly = false)

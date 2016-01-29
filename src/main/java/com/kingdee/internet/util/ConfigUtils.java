@@ -5,11 +5,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ConfigUtils {
-    @Value("${task.queue.expire.minutes}")
-    private long queueExpireMinutes = 10;
+    @Value("${task.queue.expire.minutes:10}")
+    private long queueExpireMinutes;
 
-    @Value("${task.expire.minutes}")
-    private int taskExpireMinutes = 10;
+    @Value("${task.expire.minutes:10}")
+    private int taskExpireMinutes;
+
+    @Value("${not.exists:'Not Exists'}")
+    private String notExists;
 
     public long queueExpireMinutes() {
         return queueExpireMinutes;
